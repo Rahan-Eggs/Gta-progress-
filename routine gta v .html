@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Hour — Daily Ops Routine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#120A1E;
+    --panel:#1C1129;
+    --panel-2:#241533;
+    --line:rgba(255,255,255,0.09);
+    --text:#F5EEFA;
+    --muted:#A497B3;
+    --cyan:#17E3C2;
+    --pink:#FF2E7E;
+    --gold:#FF8C1A;
+    --green:#3DDC84;
+    --danger:#FF5C5C;
+    --radius:14px;
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top: env(safe-area-inset-top, 0px);}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 650px at 50% -18%, rgba(255,140,26,0.28), transparent 55%),
+      radial-gradient(900px 600px at 88% 6%, rgba(255,46,126,0.22), transparent 58%),
+      radial-gradient(800px 550px at -8% 14%, rgba(123,47,247,0.24), transparent 55%),
+      radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1.4px) 0 0/22px 22px,
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100%;
+  }
+  .wrap{max-width:640px; margin:0 auto; padding:28px 18px 60px;}
+
+  .top{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px;}
+  .kicker{color:var(--muted); font-size:13px; letter-spacing:0.02em; margin:0 0 2px;}
+  h1{
+    font-family:'Bebas Neue', 'Inter', sans-serif;
+    font-size:46px;
+    line-height:0.92;
+    letter-spacing:0.02em;
+    margin:0;
+    color:#FFFFFF;
+    text-shadow:
+      2px 2px 0 rgba(255,46,126,0.55),
+      4px 4px 0 rgba(255,140,26,0.35),
+      0 0 24px rgba(23,227,194,0.25);
+  }
+  .title-bar{
+    height:4px; width:96px; margin:8px 0 4px; border-radius:2px;
+    background:linear-gradient(90deg, var(--gold), var(--pink), #7B2FF7);
+  }
+  .sub{color:var(--muted); font-size:14.5px; margin-top:4px; max-width:36ch; line-height:1.5;}
+
+  .ring-box{position:relative; width:84px; height:84px; flex:none;}
+  svg.ring{transform:rotate(-90deg);}
+  .ring-track{fill:none; stroke:var(--line); stroke-width:7;}
+  .ring-fill{fill:none; stroke:var(--cyan); stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset .4s ease, stroke .4s ease;}
+  .ring-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;}
+  .ring-label b{font-family:'Bebas Neue'; font-size:20px; letter-spacing:0.02em;}
+  .ring-label span{font-size:9.5px; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase;}
+
+  /* Start screen */
+  .start-overlay{
+    position:fixed; inset:0; background:rgba(6,7,12,0.92); backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center; z-index:50; padding:24px; overflow-y:auto;
+  }
+  .start-card{max-width:420px; width:100%; text-align:center; margin:auto;}
+  .start-kicker{color:var(--cyan); font-size:12px; letter-spacing:0.08em; font-weight:700; margin-bottom:6px;}
+  .start-title{font-family:'Bebas Neue'; font-size:34px; margin:0 0 10px; letter-spacing:0.01em;}
+  .start-sub{color:var(--muted); font-size:14px; margin-bottom:26px; line-height:1.55;}
+  .start-btn{
+    display:block; width:100%; text-align:left; background:var(--panel); border:1px solid var(--line);
+    border-radius:14px; padding:16px 18px; margin-bottom:12px; cursor:pointer; transition: all .15s;
+  }
+  .start-btn:hover, .start-btn:active{border-color:var(--cyan); transform:translateY(-1px);}
+  .start-btn .sb-title{font-family:'Bebas Neue'; font-size:20px; letter-spacing:0.01em; color:var(--text);}
+  .start-btn .sb-time{font-size:11.5px; color:var(--gold); font-weight:700; float:right;}
+  .start-btn .sb-desc{font-size:12.5px; color:var(--muted); margin-top:3px; clear:both;}
+  .start-skip{margin-top:6px; font-size:12px; color:var(--muted); background:none; border:none; cursor:pointer; text-decoration:underline;}
+
+  .reset-timer{
+    display:flex; align-items:center; gap:9px; background:linear-gradient(120deg, rgba(255,140,26,0.16), rgba(255,46,126,0.14));
+    border:1px solid var(--line); border-radius:12px; padding:11px 14px; margin-bottom:14px;
+  }
+  .rt-icon{font-size:15px; flex:none;}
+  .rt-text{font-size:12.5px; color:var(--text); font-weight:600; line-height:1.4;}
+  .rt-text b{color:var(--gold);}
+  .rt-text span.rt-sub{display:block; font-weight:400; color:var(--muted); font-size:11px; margin-top:2px;}
+
+  .fib-chip{
+    display:flex; align-items:center; gap:10px; background:var(--panel); border:1px solid var(--line);
+    border-radius:12px; padding:11px 14px; margin-bottom:14px; cursor:pointer; transition:all .15s;
+  }
+  .fib-chip.done{border-color:rgba(61,220,132,0.5); background:rgba(61,220,132,0.07);}
+  .fib-check{
+    flex:none; width:20px; height:20px; border-radius:6px; border:1.5px solid var(--muted); position:relative;
+  }
+  .fib-chip.done .fib-check{background:var(--green); border-color:var(--green);}
+  .fib-chip.done .fib-check::after{
+    content:''; position:absolute; left:5px; top:1px; width:5px; height:10px;
+    border:solid #0A0C14; border-width:0 2px 2px 0; transform:rotate(45deg);
+  }
+  .fib-text{font-size:12px; color:var(--muted); line-height:1.4;}
+  .fib-text b{color:var(--text);}
+  .fib-chip.done .fib-text{color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(138,144,166,0.4);}
+
+  .session-row{
+    display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;
+  }
+  .session-label{font-size:12px; color:var(--muted); font-weight:600; flex:none;}
+  .session-chips{display:flex; gap:6px; flex:1;}
+  .session-chip{
+    flex:1; text-align:center; padding:8px 6px; border-radius:10px; background:var(--panel);
+    border:1px solid var(--line); cursor:pointer; font-size:12.5px; font-weight:700; color:var(--muted);
+    transition:all .15s;
+  }
+  .session-chip.active{border-color:var(--cyan); color:var(--cyan); background:rgba(23,227,194,0.10);}
+  .session-note{font-size:11.5px; color:var(--muted); margin:-6px 0 14px; display:none;}
+
+  .cycle-divider{
+    display:flex; align-items:center; gap:10px; margin:18px 0 4px; color:var(--muted);
+    font-size:11px; letter-spacing:0.05em; text-transform:uppercase; font-weight:700;
+  }
+  .cycle-divider::before, .cycle-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .cycle-divider:first-child{margin-top:0;}
+  .cycle-warning{
+    background:rgba(255,46,126,0.10); border:1px solid rgba(255,46,126,0.35); color:var(--pink);
+    border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.5; margin-bottom:12px;
+  }
+
+  .tabs{display:flex; gap:8px; margin-bottom:14px; overflow-x:auto; padding-bottom:2px;}
+  .tab{
+    flex:1; min-width:84px; text-align:center; padding:12px 8px; border-radius:12px;
+    background:var(--panel); border:1px solid var(--line); cursor:pointer; user-select:none;
+    transition: border-color .2s, background .2s, transform .15s;
+  }
+  .tab:active{transform:scale(0.98);}
+  .tab .t-title{font-family:'Bebas Neue'; font-size:17px; letter-spacing:0.02em;}
+  .tab .t-time{font-size:11px; color:var(--muted); margin-top:2px;}
+  .tab.active{background:linear-gradient(160deg, rgba(23,227,194,0.16), rgba(255,46,126,0.12)); border-color:rgba(23,227,194,0.55);}
+  .tab.active .t-title{color:var(--cyan);}
+
+  /* Collapsible bars (shared style for boost + business panels) */
+  .util-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:11px 14px; margin-bottom:10px; cursor:pointer;
+  }
+  .util-bar-left{display:flex; align-items:center; gap:9px; min-width:0;}
+  .util-icon{font-size:15px; flex:none;}
+  .util-bar-text{font-size:12.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .util-bar-text b{color:var(--gold);}
+  .util-chevron{flex:none; color:var(--muted); font-size:12px; transition:transform .2s;}
+  .util-panel{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:12px;
+    padding:14px 16px; margin-bottom:16px; display:none;
+  }
+  .util-panel.open{display:block;}
+  .util-panel-title{font-size:12.5px; color:var(--muted); line-height:1.6; margin-bottom:12px;}
+  .util-panel-title a{color:var(--cyan); text-decoration:none; border-bottom:1px dotted var(--cyan);}
+
+  .boost-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .boost-item{
+    display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
+    border-radius:9px; padding:9px 10px; cursor:pointer; user-select:none; transition:all .15s;
+  }
+  .boost-item.on{border-color:var(--gold); background:rgba(255,140,26,0.10);}
+  .boost-dot{width:8px; height:8px; border-radius:50%; background:var(--line); flex:none; transition:background .15s;}
+  .boost-item.on .boost-dot{background:var(--gold); box-shadow:0 0 6px rgba(255,140,26,0.7);}
+  .boost-item span{font-size:12.5px; font-weight:600;}
+  .util-clear{margin-top:12px; font-size:11.5px; color:var(--muted); background:none; border:none; cursor:pointer; text-decoration:underline; padding:0;}
+
+  /* Business stock rows */
+  .biz-row{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px;}
+  .biz-row-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px;}
+  .biz-name{font-size:12.5px; font-weight:700;}
+  .biz-name-input{
+    font-family:inherit; font-size:12.5px; font-weight:700; color:var(--text); background:transparent;
+    border:none; border-bottom:1px dashed var(--line); padding:0 0 2px; width:135px;
+  }
+  .biz-name-input:focus{outline:none; border-bottom-color:var(--cyan);}
+  .biz-pct{font-size:12px; font-weight:700; color:var(--gold); flex:none; min-width:36px; text-align:right;}
+  .biz-pct.ready{color:var(--green);}
+  .biz-owned-toggle{
+    font-size:10px; padding:3px 8px; border-radius:20px; border:1px solid var(--line); cursor:pointer;
+    color:var(--muted); white-space:nowrap; flex:none;
+  }
+  .biz-owned-toggle.owned{color:var(--cyan); border-color:rgba(23,227,194,0.45); background:rgba(23,227,194,0.08);}
+  .biz-row.not-owned{opacity:0.5;}
+  .biz-row-head{gap:8px;}
+  .biz-range{width:100%; accent-color:var(--cyan); height:18px;}
+  .biz-remove{
+    flex:none; width:22px; height:22px; border-radius:6px; border:1px solid var(--line); background:transparent;
+    color:var(--muted); cursor:pointer; font-size:13px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .biz-remove:hover{border-color:var(--danger); color:var(--danger);}
+  .biz-group-label{font-size:10.5px; letter-spacing:0.04em; color:var(--muted); margin:14px 0 6px; text-transform:uppercase;}
+  .biz-group-label:first-child{margin-top:0;}
+  .add-warehouse-btn{
+    width:100%; margin-top:4px; background:transparent; border:1px dashed var(--line); color:var(--cyan);
+    border-radius:10px; padding:9px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .add-warehouse-btn:hover{border-color:var(--cyan);}
+
+  .day-desc{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:16px 18px; margin-bottom:16px; font-size:14px; color:var(--muted); line-height:1.55;
+  }
+  .day-desc b{color:var(--text); font-weight:600;}
+
+  .steps{display:flex; flex-direction:column; gap:10px;}
+  .step{
+    display:flex; gap:13px; align-items:flex-start;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px 16px; cursor:pointer; transition: border-color .2s, background .2s;
+    position:relative;
+  }
+  .step:active{transform:scale(0.995);}
+  .step.done{border-color:rgba(23,227,194,0.4); background:linear-gradient(160deg, rgba(23,227,194,0.07), rgba(28,17,41,1));}
+  .step.boosted{border-color:rgba(255,140,26,0.55); box-shadow:0 0 0 1px rgba(255,140,26,0.15) inset;}
+  .step.recommended{border-color:rgba(61,220,132,0.55); box-shadow:0 0 0 1px rgba(61,220,132,0.15) inset;}
+  .chk{
+    flex:none; width:23px; height:23px; margin-top:2px; border-radius:7px;
+    border:1.5px solid var(--muted); display:flex; align-items:center; justify-content:center;
+    transition: all .18s;
+  }
+  .step.done .chk{background:var(--cyan); border-color:var(--cyan);}
+  .chk svg{width:13px; height:13px; opacity:0; transform:scale(0.5); transition:all .18s;}
+  .step.done .chk svg{opacity:1; transform:scale(1);}
+  .step-body{flex:1; min-width:0;}
+  .step-head{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .step-title{font-weight:700; font-size:15px; letter-spacing:0.01em;}
+  .step.done .step-title{color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(138,144,166,0.5);}
+  .step-time{flex:none; font-size:11.5px; color:var(--gold); font-weight:700; white-space:nowrap;}
+  .step-note{font-size:13px; color:var(--muted); margin-top:4px; line-height:1.5;}
+  .step-stock{font-size:11.5px; margin-top:6px; font-weight:700;}
+  .step-stock.ready{color:var(--green);}
+  .step-stock.low{color:var(--muted);}
+
+  .flag{
+    display:inline-block; font-size:10px; font-weight:700; letter-spacing:0.03em;
+    padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:middle;
+  }
+  .flag.pink{background:rgba(255,46,126,0.18); color:var(--pink);}
+  .flag.gold{background:rgba(255,140,26,0.2); color:var(--gold);}
+
+  .footer-note{
+    margin-top:22px; background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius);
+    padding:15px 17px; font-size:13px; color:var(--muted); line-height:1.6;
+  }
+  .footer-note b{color:var(--gold);}
+
+  .reset-row{display:flex; justify-content:center; gap:16px; margin-top:18px; flex-wrap:wrap;}
+  .reset-btn{
+    background:transparent; border:1px solid var(--line); color:var(--muted);
+    font-size:12.5px; padding:9px 16px; border-radius:20px; cursor:pointer; font-family:inherit;
+  }
+  .reset-btn:hover{border-color:var(--pink); color:var(--pink);}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="start-overlay" id="startOverlay">
+  <div class="start-card">
+    <p class="start-kicker">DAILY OPS · LOS SANTOS</p>
+    <h2 class="start-title">What are we doing today?</h2>
+    <p class="start-sub">Pick a lane and I'll pull up the checklist. You can switch anytime with the tabs.</p>
+    <div id="startButtons"></div>
+    <button class="start-skip" id="startSkip">Just show me the app</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="top">
+    <div>
+      <p class="kicker">DAILY OPS · LOS SANTOS</p>
+      <h1>THE HOUR</h1>
+      <div class="title-bar"></div>
+      <p class="sub">Pick your day type, work the list, track stock and boosts yourself.</p>
+    </div>
+    <div class="ring-box">
+      <svg class="ring" width="84" height="84" viewBox="0 0 84 84">
+        <circle class="ring-track" cx="42" cy="42" r="36"></circle>
+        <circle class="ring-fill" id="ringFill" cx="42" cy="42" r="36" stroke-dasharray="226.19" stroke-dashoffset="226.19"></circle>
+      </svg>
+      <div class="ring-label"><b id="ringPct">0%</b><span id="ringSub">0/60m</span></div>
+    </div>
+  </div>
+
+  <div class="reset-timer" id="resetTimer">
+    <span class="rt-icon">⏳</span>
+    <span class="rt-text" id="resetTimerText">Loading reset countdown…</span>
+  </div>
+
+  <div class="fib-chip" id="fibChip">
+    <span class="fib-check" id="fibCheck"></span>
+    <span class="fib-text"><b>Garment Factory:</b> this week's doubled FIB File — ~$300k+, worth doing once</span>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div class="session-row">
+    <span class="session-label">Session:</span>
+    <div class="session-chips" id="sessionChips"></div>
+  </div>
+  <p class="session-note" id="sessionNote"></p>
+
+  <div class="util-bar" id="bizBar">
+    <div class="util-bar-left"><span class="util-icon">🏢</span><span class="util-bar-text" id="bizBarText">My Businesses — set stock %</span></div>
+    <span class="util-chevron" id="bizChevron">▾</span>
+  </div>
+  <div class="util-panel" id="bizPanel">
+    <p class="util-panel-title">No live save data exists for this outside the game, so this is manual — punch in rough stock % before your session (Interaction Menu → SecuroServ / MC businesses) and the checklist below will flag what's actually worth selling. Sharing this page? Mark anything you don't own as "Not owned" below — it'll disappear from your checklist. Everyone who opens this link gets their own separate settings; nothing you set here is visible to them or vice versa.</p>
+    <div id="bizSingleList"></div>
+    <div class="biz-group-label">CEO Cargo Warehouses</div>
+    <div id="bizCargoList"></div>
+    <button class="add-warehouse-btn" id="addWarehouseBtn">+ Add CEO Warehouse</button>
+    <button class="util-clear" id="bizClear">Reset all stock to 0%</button>
+  </div>
+
+  <div class="util-bar" id="boostBar">
+    <div class="util-bar-left"><span class="util-icon">🔥</span><span class="util-bar-text" id="boostBarText">Set this week's 2X boosts</span></div>
+    <span class="util-chevron" id="boostChevron">▾</span>
+  </div>
+  <div class="util-panel" id="boostPanel">
+    <p class="util-panel-title">
+      Rockstar rotates 2X money/RP bonuses every Thursday — check in-game (Online menu → News) or
+      <a href="https://www.rockstargames.com/newswire" target="_blank" rel="noopener">rockstargames.com/newswire</a>,
+      then flip on whatever's boosted. Matching steps below get a 🔥 tag and a gold outline.
+    </p>
+    <div class="boost-grid" id="boostGrid"></div>
+    <button class="util-clear" id="boostClear">Clear all boosts</button>
+  </div>
+
+  <div class="day-desc" id="dayDesc"></div>
+  <div class="steps" id="steps"></div>
+
+  <div class="reset-row">
+    <button class="reset-btn" id="resetBtn">Reset today's checklist</button>
+    <button class="reset-btn" id="restartBtn">Change today's plan</button>
+  </div>
+
+  <div class="footer-note">
+    <b>Nerf watch:</b> Kortz Center update (Jul 2026) cut repeat payouts on 20+ heists and added weekly first-completion bonuses instead. Rotate which heist you run week to week rather than grinding the same one daily — and lean harder on your Nightclub sale, since it wasn't touched.
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var READY_THRESHOLD = 70;
+
+  var DAYS = {
+    production: {
+      label: "Production", time: "~60m", repeatable: true,
+      desc: "Full circuit. Run this when you want everything topped up and sold — bunker, acid lab, Nightclub, and CEO cargo in one pass.",
+      steps: [
+        {t:"Check stock levels", m:"2 min", n:"Interaction Menu → SecuroServ / MC businesses. Only travel to what's actually near full.", tag:null},
+        {t:"Sell Acid Lab", m:"8 min", n:"Short sell mission solo. Resupply right after.", tag:"acidlab"},
+        {t:"Sell Bunker", m:"10 min", n:"Mk2 or Oppressor makes this fast. Buy max supplies once sold.", tag:"bunker"},
+        {t:"Nightclub sale", m:"15 min", n:"Dump all assigned MC goods into one sale instead of selling each business manually. This is your biggest lever now.", flag:"KEY", tag:"nightclub"},
+        {t:"Terrorbyte Client Job", m:"8 min", n:"Quick solo mission from the Nerve Center, ~$30-35k. Good filler while you're near the Terrorbyte.", tag:null},
+        {dynamic:"cargo", m:"12 min", n:"Only worth the trip if it's near full."},
+        {t:"Sell Hangar cargo", m:"10 min", n:"Lowest priority — skip today if you're short on time.", tag:"hangar"},
+        {t:"Resupply everything sold", m:"3 min", n:"Garment Factory + Terrorbyte unlocks the Master Control Terminal — use it to resupply Bunker, Nightclub, MC, and CEO Cargo remotely, no driving. Acid Lab still needs an actual visit.", tag:null}
+      ]
+    },
+    heist: {
+      label: "Heist", time: "~60m", repeatable: true,
+      desc: "Best $/hour when a heist still owes you its weekly first-completion bonus. Don't repeat the same heist two days running — post-nerf, repeats pay much less.",
+      steps: [
+        {t:"Pick this week's heist", m:"2 min", n:"Rotate — check which one hasn't paid its first-completion bonus yet this week.", tag:"heist"},
+        {t:"Run setup / prep if needed", m:"varies", n:"Skip if already prepped from a previous session.", tag:"heist"},
+        {t:"Run the finale", m:"25–35 min", n:"Grab primary target + easy secondary loot only — don't overstay for marginal extra loot.", tag:"heist"},
+        {t:"(Alt) Auto Shop Contract instead", m:"20-25 min", n:"Comparable $150k-300k payout without the setup chain — swap this in on weeks today's heist has no bonus left.", flag:"ALT", tag:null, optional:true},
+        {t:"Sell your fullest business", m:"15 min", n:"Whatever's closest to 100% — Nightclub first if it's loaded.", tag:"nightclub"},
+        {t:"Resupply that business", m:"3 min", n:"Keep production running for tomorrow.", tag:null}
+      ]
+    },
+    hybrid: {
+      label: "Hybrid", time: "~20-30m", repeatable: false,
+      desc: "For days you only have a short window, or nothing's close to full yet. Light maintenance, not a full grind.",
+      steps: [
+        {t:"Check stock levels", m:"2 min", n:"Phone → Interaction Menu. Decide if it's even worth driving anywhere.", tag:null},
+        {t:"Sell only 70%+ full stock", m:"15 min", n:"Nightclub first, then whichever business is fullest. Don't bother with partial sells.", tag:"nightclub"},
+        {t:"Resupply what's low", m:"5 min", n:"Buy with cash if you want to skip the supply run entirely.", tag:null},
+        {t:"Optional: Terrorbyte Client Job", m:"8 min", n:"Fast solo cash top-up (~$30k) if you need a quick win and have a few minutes left.", tag:null}
+      ]
+    },
+    weekly: {
+      label: "Weekly Pick", time: "~20-25m", repeatable: false,
+      desc: "Do this once a week, on top of whichever other day you're running. Auto Shop Contracts and the Garment Factory's doubled FIB File compete for the same slot — only one is worth your time depending on which has a bonus.",
+      steps: [
+        {t:"Check this week's Auto Shop bonus", m:"1 min", n:"Toggle 'Auto Shop' in the 🔥 boost panel above if it's 2X this week — that decides which step below to run.", tag:null},
+        {t:"Run Auto Shop Contract", m:"20-25 min", n:"Do this one if Auto Shop is 2X this week — solo-friendly, ~$150k-300k, doubled.", tag:"autoshop", condTag:"autoshop", condMode:"is"},
+        {t:"Do Garment Factory FIB File", m:"15-20 min", n:"Default pick when Auto Shop isn't boosted — this week's doubled file pays ~$300k+.", tag:null, condTag:"autoshop", condMode:"not"}
+      ]
+    }
+  };
+
+  var BOOSTS = [
+    {key:"bunker", label:"Bunker"},
+    {key:"acidlab", label:"Acid Lab"},
+    {key:"nightclub", label:"Nightclub"},
+    {key:"cargo", label:"CEO Cargo"},
+    {key:"hangar", label:"Hangar"},
+    {key:"heist", label:"Heists"},
+    {key:"autoshop", label:"Auto Shop"}
+  ];
+
+  var SINGLE_BIZ = [
+    {key:"acidlab", label:"Acid Lab"},
+    {key:"bunker", label:"Bunker"},
+    {key:"nightclub", label:"Nightclub"},
+    {key:"hangar", label:"Hangar"},
+    {key:"mc", label:"MC Businesses (avg)"}
+  ];
+
+  var order = ["production","heist","hybrid","weekly"];
+  var todayKey = new Date().toISOString().slice(0,10);
+  var d0 = new Date(2026,0,1);
+  var weekKey = "wk-" + Math.floor((Date.now() - d0.getTime()) / (7*24*60*60*1000));
+  var current = "production";
+  var state = {};
+  var boostState = {};
+  var bizState = {};   // { acidlab: 0-100, bunker: 0-100, ... }
+  var cargoList = [];  // [{id, label, pct}]
+  var nextCargoId = 1;
+  var ownedState = {}; // { acidlab: true/false, ... } — default true (owned) unless explicitly false
+  var sessionHours = 1;
+
+  function loadJSON(key, fallback){
+    try{
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    }catch(e){ return fallback; }
+  }
+  function saveJSON(key, obj){
+    try{ localStorage.setItem(key, JSON.stringify(obj)); }catch(e){}
+  }
+
+  function stepStateKey(day){ return "gta-hour-"+todayKey+"-"+day; }
+  function boostStateKey(){ return "gta-hour-boosts-"+weekKey; }
+  function planKey(){ return "gta-hour-plan-"+todayKey; }
+  var BIZ_KEY = "gta-hour-businesses";
+  var CARGO_KEY = "gta-hour-cargo-list";
+  var CARGO_SEQ_KEY = "gta-hour-cargo-seq";
+  var OWNED_KEY = "gta-hour-owned";
+  var SESSION_KEY = "gta-hour-session-" + todayKey;
+
+  function formatMins(n){
+    var h = Math.floor(n/60), m = n%60;
+    return h > 0 ? (h+"h "+m+"m") : (m+"m");
+  }
+
+  function isStepOwned(step){
+    if(!step.tag) return true;
+    var isSingle = SINGLE_BIZ.some(function(b){ return b.key === step.tag; });
+    if(!isSingle) return true; // tags like heist/autoshop/cargo aren't ownership-gated here
+    return ownedState[step.tag] !== false;
+  }
+
+  function getActiveSteps(){
+    return DAYS[current].steps.filter(isStepOwned);
+  }
+
+  function effectiveCycles(){
+    return DAYS[current].repeatable ? sessionHours : 1;
+  }
+
+  function computeDayTotalMinutes(dayKey){
+    var steps = DAYS[dayKey].steps.filter(isStepOwned);
+    var total = 0;
+    steps.forEach(function(step){
+      if(step.optional) return;
+      if(step.dynamic === "cargo"){
+        cargoList.forEach(function(){ total += parseMinutes(step.m); });
+        return;
+      }
+      total += parseMinutes(step.m);
+    });
+    return total;
+  }
+
+  function makeStepKey(prefix, step){ return prefix + step.t; }
+  function makeCargoKey(prefix, c){ return prefix + "cargo-" + c.id; }
+
+  function parseMinutes(m){
+    // Handles "8 min", "25-35 min", "25–35 min" (en dash), and "varies"
+    var nums = String(m).match(/\d+/g);
+    if(!nums || !nums.length) return 8; // fallback for things like "varies"
+    if(nums.length === 1) return parseInt(nums[0], 10);
+    var sum = nums.reduce(function(a,b){ return a + parseInt(b,10); }, 0);
+    return Math.round(sum / nums.length); // average of a range
+  }
+
+  var tabsEl = document.getElementById('tabs');
+  var descEl = document.getElementById('dayDesc');
+  var stepsEl = document.getElementById('steps');
+  var ringFill = document.getElementById('ringFill');
+  var ringPct = document.getElementById('ringPct');
+  var ringSub = document.getElementById('ringSub');
+  var boostBar = document.getElementById('boostBar');
+  var boostPanel = document.getElementById('boostPanel');
+  var boostChevron = document.getElementById('boostChevron');
+  var boostBarText = document.getElementById('boostBarText');
+  var boostGrid = document.getElementById('boostGrid');
+  var bizBar = document.getElementById('bizBar');
+  var bizPanel = document.getElementById('bizPanel');
+  var bizChevron = document.getElementById('bizChevron');
+  var bizBarText = document.getElementById('bizBarText');
+  var bizSingleList = document.getElementById('bizSingleList');
+  var bizCargoList = document.getElementById('bizCargoList');
+  var startOverlay = document.getElementById('startOverlay');
+  var startButtons = document.getElementById('startButtons');
+  var sessionChips = document.getElementById('sessionChips');
+  var CIRC = 226.19;
+
+  function renderTabs(){
+    tabsEl.innerHTML = "";
+    order.forEach(function(key){
+      var d = DAYS[key];
+      var mins = computeDayTotalMinutes(key);
+      var label = "~" + formatMins(mins) + (d.repeatable ? "/cycle" : "");
+      var el = document.createElement('div');
+      el.className = "tab" + (key === current ? " active" : "");
+      el.innerHTML = '<div class="t-title">'+d.label+'</div><div class="t-time">'+label+'</div>';
+      el.addEventListener('click', function(){
+        current = key;
+        state = loadJSON(stepStateKey(current), {});
+        renderAll();
+      });
+      tabsEl.appendChild(el);
+    });
+  }
+
+  function renderDesc(){
+    descEl.innerHTML = "<b>"+DAYS[current].label+" Day</b> — " + DAYS[current].desc;
+  }
+
+  function renderBoostBar(){
+    var active = BOOSTS.filter(function(b){ return boostState[b.key]; }).map(function(b){ return b.label; });
+    if(active.length){
+      boostBarText.innerHTML = "<b>2X active:</b> " + active.join(", ");
+    } else {
+      boostBarText.textContent = "Set this week's 2X boosts";
+    }
+  }
+
+  function renderBoostGrid(){
+    boostGrid.innerHTML = "";
+    BOOSTS.forEach(function(b){
+      var on = !!boostState[b.key];
+      var el = document.createElement('div');
+      el.className = "boost-item" + (on ? " on" : "");
+      el.innerHTML = '<div class="boost-dot"></div><span>'+b.label+'</span>';
+      el.addEventListener('click', function(){
+        boostState[b.key] = !boostState[b.key];
+        saveJSON(boostStateKey(), boostState);
+        renderBoostGrid();
+        renderBoostBar();
+        renderSteps();
+      });
+      boostGrid.appendChild(el);
+    });
+  }
+
+  function renderBizBar(){
+    var readyOnes = [];
+    SINGLE_BIZ.forEach(function(b){
+      if((bizState[b.key]||0) >= READY_THRESHOLD) readyOnes.push(b.label);
+    });
+    cargoList.forEach(function(c){
+      if((c.pct||0) >= READY_THRESHOLD) readyOnes.push(c.label);
+    });
+    if(readyOnes.length){
+      bizBarText.innerHTML = "<b>Ready to sell:</b> " + readyOnes.join(", ");
+    } else {
+      bizBarText.textContent = "My Businesses — set stock %";
+    }
+  }
+
+  function pctClass(pct){ return pct >= READY_THRESHOLD ? "ready" : ""; }
+
+  function renderBizSingleList(){
+    bizSingleList.innerHTML = "";
+    SINGLE_BIZ.forEach(function(b){
+      var pct = bizState[b.key] || 0;
+      var owned = ownedState[b.key] !== false;
+      var row = document.createElement('div');
+      row.className = "biz-row" + (owned ? "" : " not-owned");
+      row.innerHTML =
+        '<div class="biz-row-head">' +
+          '<span class="biz-name">'+b.label+'</span>' +
+          '<div class="biz-owned-toggle'+(owned?' owned':'')+'">'+(owned ? 'Owned' : 'Not owned')+'</div>' +
+          '<span class="biz-pct '+pctClass(pct)+'">'+pct+'%</span>' +
+        '</div>' +
+        '<input type="range" class="biz-range" min="0" max="100" step="5" value="'+pct+'"'+(owned?'':' disabled')+'>';
+      var range = row.querySelector('.biz-range');
+      var ownedToggle = row.querySelector('.biz-owned-toggle');
+      range.addEventListener('input', function(){
+        bizState[b.key] = parseInt(range.value, 10);
+        saveJSON(BIZ_KEY, bizState);
+        renderBizSingleList();
+        renderBizBar();
+        renderSteps();
+      });
+      ownedToggle.addEventListener('click', function(){
+        ownedState[b.key] = !owned;
+        saveJSON(OWNED_KEY, ownedState);
+        renderBizSingleList();
+        renderBizBar();
+        renderSteps();
+        renderRing();
+        renderTabs();
+      });
+      bizSingleList.appendChild(row);
+    });
+  }
+
+  function renderBizCargoList(){
+    bizCargoList.innerHTML = "";
+    cargoList.forEach(function(c, idx){
+      var pct = c.pct || 0;
+      var row = document.createElement('div');
+      row.className = "biz-row";
+      row.innerHTML =
+        '<div class="biz-row-head">' +
+          '<input type="text" class="biz-name-input" value="'+c.label.replace(/"/g,'&quot;')+'">' +
+          '<span class="biz-pct '+pctClass(pct)+'" style="margin-right:6px;">'+pct+'%</span>' +
+          '<button class="biz-remove" title="Remove">×</button>' +
+        '</div>' +
+        '<input type="range" class="biz-range" min="0" max="100" step="5" value="'+pct+'">';
+      var nameInput = row.querySelector('.biz-name-input');
+      var range = row.querySelector('.biz-range');
+      var removeBtn = row.querySelector('.biz-remove');
+      nameInput.addEventListener('change', function(){
+        c.label = nameInput.value.trim() || c.label;
+        saveJSON(CARGO_KEY, cargoList);
+        renderSteps();
+        renderBizBar();
+      });
+      range.addEventListener('input', function(){
+        c.pct = parseInt(range.value, 10);
+        saveJSON(CARGO_KEY, cargoList);
+        renderBizCargoList();
+        renderBizBar();
+        renderSteps();
+      });
+      removeBtn.addEventListener('click', function(){
+        cargoList.splice(idx, 1);
+        saveJSON(CARGO_KEY, cargoList);
+        renderBizCargoList();
+        renderBizBar();
+        renderSteps();
+        renderRing();
+        renderTabs();
+      });
+      bizCargoList.appendChild(row);
+    });
+  }
+
+  function addWarehouse(){
+    var id = "cargo-" + nextCargoId;
+    var label = "CEO Warehouse " + nextCargoId;
+    nextCargoId += 1;
+    saveJSON(CARGO_SEQ_KEY, nextCargoId);
+    cargoList.push({id:id, label:label, pct:0});
+    saveJSON(CARGO_KEY, cargoList);
+    renderBizCargoList();
+    renderBizBar();
+    renderSteps();
+    renderRing();
+    renderTabs();
+  }
+
+  function renderStepsForCargo(step, prefix){
+    prefix = prefix || "";
+    var frag = document.createDocumentFragment();
+    if(cargoList.length === 0){
+      var empty = document.createElement('div');
+      empty.className = "step";
+      empty.innerHTML =
+        '<div class="chk"></div>' +
+        '<div class="step-body"><div class="step-head"><div class="step-title">Sell CEO Warehouse crates</div><div class="step-time">'+step.m+'</div></div>' +
+        '<div class="step-note">No warehouses added yet — open "My Businesses" above and hit "+ Add CEO Warehouse" to track each one.</div></div>';
+      frag.appendChild(empty);
+      return frag;
+    }
+    cargoList.forEach(function(c, idx){
+      var stateKey = makeCargoKey(prefix, c);
+      var done = !!state[stateKey];
+      var pct = c.pct || 0;
+      var ready = pct >= READY_THRESHOLD;
+      var boosted = boostState["cargo"];
+      var el = document.createElement('div');
+      el.className = "step" + (done ? " done" : "") + (boosted ? " boosted" : "");
+      el.innerHTML =
+        '<div class="chk"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5 5L20 6.5" stroke="#0A0C14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+        '<div class="step-body">' +
+          '<div class="step-head"><div class="step-title">Sell '+c.label+
+            (boosted ? ' <span class="flag gold">🔥 2X</span>' : '') +
+          '</div><div class="step-time">'+step.m+'</div></div>' +
+          '<div class="step-note">'+step.n+'</div>' +
+          '<div class="step-stock '+(ready?"ready":"low")+'">'+(ready ? "✓ " : "· ")+pct+'% full'+(ready ? " — worth the trip" : " — probably skip")+'</div>' +
+        '</div>';
+      el.addEventListener('click', function(){
+        state[stateKey] = !state[stateKey];
+        saveJSON(stepStateKey(current), state);
+        renderSteps();
+        renderRing();
+      });
+      frag.appendChild(el);
+    });
+    return frag;
+  }
+
+  function renderStepsForCycle(activeSteps, prefix){
+    activeSteps.forEach(function(step){
+      if(step.dynamic === "cargo"){
+        stepsEl.appendChild(renderStepsForCargo(step, prefix));
+        return;
+      }
+      var stateKey = makeStepKey(prefix, step);
+      var done = !!state[stateKey];
+      var boosted = step.tag && boostState[step.tag];
+      var recommended = false;
+      if(step.condTag){
+        var condActive = !!boostState[step.condTag];
+        recommended = step.condMode === "not" ? !condActive : condActive;
+      }
+      var hasStock = step.tag && SINGLE_BIZ.some(function(b){ return b.key === step.tag; });
+      var pct = hasStock ? (bizState[step.tag] || 0) : null;
+      var ready = pct !== null && pct >= READY_THRESHOLD;
+      var el = document.createElement('div');
+      el.className = "step" + (done ? " done" : "") + (boosted ? " boosted" : "") + (recommended && !boosted ? " recommended" : "");
+      el.innerHTML =
+        '<div class="chk"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12.5l5 5L20 6.5" stroke="#0A0C14" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+        '<div class="step-body">' +
+          '<div class="step-head"><div class="step-title">'+step.t+
+            (step.flag ? ' <span class="flag pink">'+step.flag+'</span>' : '') +
+            (boosted ? ' <span class="flag gold">🔥 2X</span>' : '') +
+          '</div><div class="step-time">'+step.m+'</div></div>' +
+          '<div class="step-note">'+step.n+'</div>' +
+          (pct !== null ? '<div class="step-stock '+(ready?"ready":"low")+'">'+(ready ? "✓ " : "· ")+pct+'% full'+(ready ? " — worth the trip" : " — probably skip") + '</div>' : '') +
+          (recommended && !boosted && pct === null ? '<div class="step-stock ready">✓ Recommended pick this week</div>' : '') +
+        '</div>';
+      el.addEventListener('click', function(){
+        state[stateKey] = !state[stateKey];
+        saveJSON(stepStateKey(current), state);
+        renderSteps();
+        renderRing();
+      });
+      stepsEl.appendChild(el);
+    });
+  }
+
+  function renderSteps(){
+    stepsEl.innerHTML = "";
+    var activeSteps = getActiveSteps();
+    var cycles = effectiveCycles();
+
+    if(cycles > 1 && current === "heist"){
+      var warn = document.createElement('div');
+      warn.className = "cycle-warning";
+      warn.textContent = "⚠ Repeat payouts are reduced post-nerf for running the same heist twice — vary which heist you pick each cycle, or swap a cycle for Production instead.";
+      stepsEl.appendChild(warn);
+    }
+
+    for(var cyc = 1; cyc <= cycles; cyc++){
+      if(cycles > 1){
+        var divider = document.createElement('div');
+        divider.className = "cycle-divider";
+        divider.textContent = "Cycle " + cyc + " of " + cycles;
+        stepsEl.appendChild(divider);
+      }
+      var prefix = cycles > 1 ? ("c" + cyc + "-") : "";
+      renderStepsForCycle(activeSteps, prefix);
+    }
+  }
+
+  function renderRing(){
+    var activeSteps = getActiveSteps();
+    var cycles = effectiveCycles();
+    var totalMin = 0, doneMin = 0;
+    for(var cyc = 1; cyc <= cycles; cyc++){
+      var prefix = cycles > 1 ? ("c" + cyc + "-") : "";
+      activeSteps.forEach(function(step){
+        if(step.dynamic === "cargo"){
+          cargoList.forEach(function(c){
+            var m = parseMinutes(step.m);
+            totalMin += m;
+            if(state[makeCargoKey(prefix, c)]) doneMin += m;
+          });
+          return;
+        }
+        var m = parseMinutes(step.m);
+        if(!step.optional) totalMin += m;
+        if(state[makeStepKey(prefix, step)]) doneMin += m;
+      });
+    }
+    var target = totalMin || 60;
+    var pct = Math.min(1, doneMin / target);
+    var offset = CIRC - (CIRC * pct);
+    ringFill.style.strokeDashoffset = offset;
+    ringFill.style.stroke = pct >= 1 ? '#2FE0D0' : (pct > 0.6 ? '#2FE0D0' : '#FF3D77');
+    ringPct.textContent = Math.round(pct*100) + "%";
+    ringSub.textContent = formatMins(doneMin) + " / " + formatMins(target);
+  }
+
+  function renderSessionRow(){
+    var row = document.querySelector('.session-row');
+    var note = document.getElementById('sessionNote');
+    if(!DAYS[current].repeatable){
+      row.style.display = "none";
+      note.style.display = "block";
+      note.textContent = DAYS[current].label + " is a single one-off task, not a repeatable circuit — session length doesn't apply here. Switch to Production or Heist to stack multiple hours.";
+    } else {
+      row.style.display = "flex";
+      note.style.display = "none";
+    }
+  }
+
+  function renderSessionChips(){
+    sessionChips.innerHTML = "";
+    [1,2,3,4].forEach(function(h){
+      var el = document.createElement('div');
+      el.className = "session-chip" + (sessionHours === h ? " active" : "");
+      el.textContent = h + "h";
+      el.addEventListener('click', function(){
+        sessionHours = h;
+        saveJSON(SESSION_KEY, sessionHours);
+        renderSessionChips();
+        renderSteps();
+        renderRing();
+      });
+      sessionChips.appendChild(el);
+    });
+  }
+
+  function renderAll(){
+    renderTabs();
+    renderDesc();
+    renderSteps();
+    renderRing();
+    renderBoostBar();
+    renderBoostGrid();
+    renderBizBar();
+    renderBizSingleList();
+    renderBizCargoList();
+    renderSessionChips();
+    renderSessionRow();
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    state = {};
+    saveJSON(stepStateKey(current), state);
+    renderSteps();
+    renderRing();
+  });
+
+  document.getElementById('restartBtn').addEventListener('click', function(){
+    showStart();
+  });
+
+  boostBar.addEventListener('click', function(){
+    boostPanel.classList.toggle('open');
+    boostChevron.textContent = boostPanel.classList.contains('open') ? '▴' : '▾';
+  });
+
+  document.getElementById('boostClear').addEventListener('click', function(e){
+    e.stopPropagation();
+    boostState = {};
+    saveJSON(boostStateKey(), boostState);
+    renderBoostGrid();
+    renderBoostBar();
+    renderSteps();
+  });
+
+  bizBar.addEventListener('click', function(){
+    bizPanel.classList.toggle('open');
+    bizChevron.textContent = bizPanel.classList.contains('open') ? '▴' : '▾';
+  });
+
+  document.getElementById('bizClear').addEventListener('click', function(e){
+    e.stopPropagation();
+    bizState = {};
+    cargoList.forEach(function(c){ c.pct = 0; });
+    saveJSON(BIZ_KEY, bizState);
+    saveJSON(CARGO_KEY, cargoList);
+    renderBizSingleList();
+    renderBizCargoList();
+    renderBizBar();
+    renderSteps();
+  });
+
+  document.getElementById('addWarehouseBtn').addEventListener('click', function(e){
+    e.stopPropagation();
+    addWarehouse();
+  });
+
+  function buildStartButtons(){
+    startButtons.innerHTML = "";
+    order.forEach(function(key){
+      var d = DAYS[key];
+      var mins = computeDayTotalMinutes(key);
+      var label = "~" + formatMins(mins) + (d.repeatable ? "/cycle" : "");
+      var el = document.createElement('div');
+      el.className = "start-btn";
+      el.innerHTML =
+        '<span class="sb-time">'+label+'</span>' +
+        '<div class="sb-title">'+d.label+' Day</div>' +
+        '<div class="sb-desc">'+d.desc+'</div>';
+      el.addEventListener('click', function(){
+        current = key;
+        saveJSON(planKey(), key);
+        state = loadJSON(stepStateKey(current), {});
+        hideStart();
+        renderAll();
+      });
+      startButtons.appendChild(el);
+    });
+  }
+
+  function showStart(){ startOverlay.style.display = 'flex'; }
+  function hideStart(){ startOverlay.style.display = 'none'; }
+
+  document.getElementById('startSkip').addEventListener('click', function(){
+    hideStart();
+  });
+
+  // ---- Weekly reset countdown (Rockstar resets ~5am ET Thursdays -> 9am UTC during US daylight saving, roughly Mar-Nov) ----
+  var resetTimerText = document.getElementById('resetTimerText');
+
+  function isUSDaylightSaving(d){
+    // Rough US DST window: 2nd Sunday of March to 1st Sunday of November
+    var year = d.getUTCFullYear();
+    function nthSunday(month, n){ // month is 0-indexed
+      var date = new Date(Date.UTC(year, month, 1));
+      var day = date.getUTCDay();
+      var firstSunday = 1 + ((7 - day) % 7);
+      return new Date(Date.UTC(year, month, firstSunday + (n-1)*7));
+    }
+    var start = nthSunday(2, 2);   // 2nd Sunday of March
+    var end = nthSunday(10, 1);    // 1st Sunday of November
+    return d >= start && d < end;
+  }
+
+  function nextResetUTC(){
+    var now = new Date();
+    var resetHourUTC = isUSDaylightSaving(now) ? 9 : 10; // 5am ET -> UTC (EDT=+4, EST=+5)
+    var d = new Date(now);
+    d.setUTCHours(resetHourUTC, 0, 0, 0);
+    // advance to next Thursday (UTC day 4) at/after resetHourUTC
+    while(d.getUTCDay() !== 4 || d <= now){
+      d.setUTCDate(d.getUTCDate() + 1);
+      d.setUTCHours(resetHourUTC, 0, 0, 0);
+    }
+    return d;
+  }
+
+  function updateResetTimer(){
+    var target = nextResetUTC();
+    var now = new Date();
+    var diff = target - now;
+    if(diff < 0) diff = 0;
+    var totalMin = Math.floor(diff / 60000);
+    var days = Math.floor(totalMin / 1440);
+    var hours = Math.floor((totalMin % 1440) / 60);
+    var mins = totalMin % 60;
+
+    var bdOffsetMs = 6 * 60 * 60 * 1000; // Bangladesh is UTC+6, no DST
+    var bdTime = new Date(target.getTime() + bdOffsetMs);
+    var bdHours = bdTime.getUTCHours();
+    var bdMinsStr = String(bdTime.getUTCMinutes()).padStart(2,'0');
+    var ampm = bdHours >= 12 ? 'PM' : 'AM';
+    var bdHours12 = bdHours % 12; if(bdHours12 === 0) bdHours12 = 12;
+    var bdLabel = 'Thu ' + bdHours12 + ':' + bdMinsStr + ' ' + ampm + ' (BD time)';
+
+    var parts = [];
+    if(days > 0) parts.push(days + 'd');
+    parts.push(hours + 'h');
+    parts.push(mins + 'm');
+
+    resetTimerText.innerHTML = '<b>' + parts.join(' ') + '</b> until next weekly reset' +
+      '<span class="rt-sub">' + bdLabel + ' — new 2X boosts drop then, come update the toggle above</span>';
+  }
+
+  updateResetTimer();
+  setInterval(updateResetTimer, 30000);
+
+  // ---- Weekly FIB File chip ----
+  var fibChip = document.getElementById('fibChip');
+  var FIB_KEY = "gta-hour-fib-" + weekKey;
+  var fibDone = loadJSON(FIB_KEY, false);
+  function renderFib(){
+    fibChip.className = "fib-chip" + (fibDone ? " done" : "");
+  }
+  fibChip.addEventListener('click', function(){
+    fibDone = !fibDone;
+    saveJSON(FIB_KEY, fibDone);
+    renderFib();
+  });
+  renderFib();
+
+  boostState = loadJSON(boostStateKey(), {});
+  bizState = loadJSON(BIZ_KEY, {});
+  ownedState = loadJSON(OWNED_KEY, {});
+  sessionHours = loadJSON(SESSION_KEY, 1);
+  cargoList = loadJSON(CARGO_KEY, null);
+  nextCargoId = loadJSON(CARGO_SEQ_KEY, 3);
+  if(cargoList === null){
+    cargoList = [
+      {id:"cargo-1", label:"CEO Warehouse 1", pct:0},
+      {id:"cargo-2", label:"CEO Warehouse 2", pct:0}
+    ];
+    saveJSON(CARGO_KEY, cargoList);
+  }
+  buildStartButtons();
+
+  var savedPlan = loadJSON(planKey(), null);
+  if(savedPlan && DAYS[savedPlan]){
+    current = savedPlan;
+    state = loadJSON(stepStateKey(current), {});
+    hideStart();
+  } else {
+    current = "production";
+    state = loadJSON(stepStateKey(current), {});
+  }
+  renderAll();
+})();
+</script>
+</body>
+</html>
